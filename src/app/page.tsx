@@ -10,6 +10,7 @@ interface HomeData {
     subheading: string;
     sitemap: string;
     companyInfo: string;
+    
     uploadbtn: {
       label: string;
       color: string;
@@ -85,32 +86,32 @@ interface CardData {
     }[];
   };
 }
-async function fetchhomeData(): Promise<{
-  homeData: HomeData[];
-  cardData: CardData[];
-}> {
-  try {
-    const [res1, res2] = await Promise.all([
-      fetch("https://strapi-dev.seksa.today/api/homes?populate=*", {
-        cache: "no-store",
-      }),
-      fetch(
-        "https://strapi-dev.seksa.today/api/homes?populate[card][populate]=*",
-        { cache: "no-store" }
-      ),
-    ]);
-    if (!res1.ok || !res2.ok) {
-      throw new Error("Network response was not ok");
-    }
+export async function fetchhomeData(): Promise<{
+     homeData: HomeData[];
+     cardData: CardData[];
+   }> {
+     try {
+       const [res1, res2] = await Promise.all([
+         fetch("https://strapi-dev.seksa.today/api/homes?populate=*", {
+           next: { revalidate: 60 }, // Revalidate every 60 seconds
+         }),
+         fetch(
+           "https://strapi-dev.seksa.today/api/homes?populate[card][populate]=*",
+           { next: { revalidate: 60 } }
+         ),
+       ]);
+       if (!res1.ok || !res2.ok) {
+         throw new Error("Network response was not ok");
+       }
 
-    const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+       const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
 
-    return { homeData: data1.data, cardData: data2.data };
-  } catch (error) {
-    console.error("Error fetching home data:", error);
-    return { homeData: [], cardData: [] };
-  }
-}
+       return { homeData: data1.data, cardData: data2.data };
+     } catch (error) {
+       console.error("Error fetching home data:", error);
+       return { homeData: [], cardData: [] };
+     }
+   }
 export default async function HomePage() {
   const { homeData, cardData } = await fetchhomeData();
 
